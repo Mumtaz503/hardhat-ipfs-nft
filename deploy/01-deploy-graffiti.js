@@ -60,7 +60,7 @@ module.exports = async ({getNamedAccounts, deployments}) => {
 
     if(developmentChains.includes(network.name)) {
         console.log("Adding consumer to the VRF contract for local-host");
-        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, graffitiNft.address);
+        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, graffitiNft.target);
         console.log("Consumer successfully added");
     }
 
@@ -68,7 +68,7 @@ module.exports = async ({getNamedAccounts, deployments}) => {
 
     if(!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         console.log("Verifying contract please wait...");
-        await verify(graffitiNft.address, arguments);
+        await verify(graffitiNft.target, arguments);
     }
 }
 
