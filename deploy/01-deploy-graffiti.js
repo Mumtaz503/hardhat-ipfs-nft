@@ -1,7 +1,8 @@
-const {network} = require("hardhat");
+const {network, ethers} = require("hardhat");
 const {developmentChains, networkConfig} = require("../helper-hardhat-config");
 const {verify} = require("../utils/verification");
 const {storeImages, storeTokenUriMetadata} = require("../utils/uploadToPinata");
+require("dotenv").config();
 
 let tokenURIs;
 const FUND_AMOUNT = "1000000000000000000000";
@@ -26,14 +27,14 @@ module.exports = async ({getNamedAccounts, deployments}) => {
         tokenURIs = await handleTokenUris();
     }
 
-    let vrfCoordinatorAddress, subscriptionId;
+    let vrfCoordinatorAddress, subscriptionId, vrfCoordinatorV2Mock;
 
     if(developmentChains.includes(network.name)) {
-        const vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
-        vrfCoordinatorAddress = vrfCoordinatorV2Mock.address;
+        vrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
+        vrfCoordinatorAddress = vrfCoordinatorV2Mock.target;
         const transactionResponse = await vrfCoordinatorV2Mock.createSubscription();
         const transactionReciept = await transactionResponse.wait(1);
-        subscriptionId = transactionReciept.events[0].args.subId;
+        subscriptionId = transactionReciept.logs[0].args.subId;
         vrfCoordinatorV2Mock.fundSubscription(subscriptionId, FUND_AMOUNT);
     } else {
         vrfCoordinatorAddress = networkConfig[chainId].vrfCoordinatorV2;
@@ -57,9 +58,15 @@ module.exports = async ({getNamedAccounts, deployments}) => {
         waitConfirmations: network.config.blockConfirmations || 1,
     });
 
+    if(developmentChains.includes(network.name)) {
+        console.log("Adding consumer to the VRF contract for local-host");
+        await vrfCoordinatorV2Mock.addConsumer(subscriptionId, graffitiNft.address);
+        console.log("Consumer successfully added");
+    }
+
     log("--------------------------------------------------------------------------");
 
-    if(!developmentChains.includes(network.name)) {
+    if(!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         console.log("Verifying contract please wait...");
         await verify(graffitiNft.address, arguments);
     }

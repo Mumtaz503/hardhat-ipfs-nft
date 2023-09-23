@@ -89,7 +89,7 @@ contract Graffiti is ERC721URIStorage, VRFConsumerBaseV2, Ownable{
         uint256 moddedRng = _randomWords[0] % MAX_CHANCE_VALUE;
 
         Graffitis pickedGraffiti = getGraffitiFromModdedRng(moddedRng);
-        s_tokenCounter += s_tokenCounter;
+        s_tokenCounter += 1;
         _safeMint(nftOwner, mintedTokenId);
         _setTokenURI(mintedTokenId, s_graffitiTokenURI[uint256(pickedGraffiti)]);
 
@@ -134,5 +134,9 @@ contract Graffiti is ERC721URIStorage, VRFConsumerBaseV2, Ownable{
 
     function getTokenCounter() public view returns (uint256) {
         return s_tokenCounter;
+    }
+
+    function getRequestToSender(uint256 _requestId) public view returns (address) {
+        return s_requestIdToSender[_requestId];
     }
 }
